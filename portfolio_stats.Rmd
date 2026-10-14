@@ -1,0 +1,72 @@
+---
+title: "Documenting portfolio_stats.R"
+author: "Dhruv Parikh"
+date: "2026-10-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Purpose
+
+This document explains the single R script `R/portfolio_stats.R`, which
+computes per-symbol descriptive statistics for a portfolio of daily stock
+closing prices. The goal is to give a reviewer a clear picture of what the
+script does, what it expects, and what it returns — without having to read the
+source line by line.
+
+## Inputs
+
+The function `portfolio_stats()` takes one argument:
+
+- `prices`: a data frame with two columns
+  - `Symbol` (character) — the stock ticker
+  - `Close` (numeric) — the daily closing price
+
+```{r example-input}
+prices <- data.frame(
+  Symbol = rep(c("AAA", "BBB"), each = 3),
+  Close  = c(100.1, 101.4, 99.8, 50.2, 49.7, 51.0)
+)
+prices
+```
+
+## How it works
+
+The function groups the data by `Symbol` and summarises each group with
+`dplyr::summarise()`:
+
+```{r function-body, eval=FALSE}
+portfolio_stats <- function(prices) {
+  stopifnot(all(c("Symbol", "Close") %in% names(prices)))
+  prices %>%
+    group_by(Symbol) %>%
+    summarise(
+      n         = dplyr::n(),
+      mean_px   = mean(Close, na.rm = TRUE),
+      median_px = median(Close, na.rm = TRUE),
+      sd_px     = sd(Close, na.rm = TRUE),
+      min_px    = min(Close, na.rm = TRUE),
+      max_px    = max(Close, na.rm = TRUE),
+      .groups   = "drop"
+    )
+}
+```
+
+## Outputs
+
+A tidy data frame with one row per symbol and the columns `n`, `mean_px`,
+`median_px`, `sd_px`, `min_px`, and `max_px`.
+
+```{r run, echo=FALSE}
+source("R/portfolio_stats.R")
+portfolio_stats(prices)
+```
+
+# Reproducibility
+
+Run `install.packages("dplyr")`, then `source("R/portfolio_stats.R")` and call
+`portfolio_stats()` on any data frame with `Symbol` and `Close` columns. Only
+synthetic data is used in this document.
